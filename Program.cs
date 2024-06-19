@@ -35,7 +35,7 @@ class SpellChecker
                 {
                     // If characters are the same, no edit is needed
                     matrix[i, j] = matrix[i - 1, j - 1];
-                    operations[i, j] = new List<string>(operations[i - 1, j - 1]);
+                    operations[i, j] = new List<string>(operations[i - 1, j - 1]) { "noedit" };
                 }
                 else
                 {
@@ -68,12 +68,19 @@ class SpellChecker
     {
         for (int i = 1; i < edits.Count; i++)
         {
+            // Ignore "noedit" in the validation process
+            if (edits[i] == "noedit")
+            {
+                continue;
+            }
+
+            // Check if the current edit is the same as the previous and they are either 'insert' or 'delete'
             if (edits[i] == edits[i - 1] && (edits[i] == "insert" || edits[i] == "delete"))
             {
-                return false;
+                return false; // Invalid if two adjacent edits are of the same type (insert or delete)
             }
         }
-        return true;
+        return true; // Valid if the above condition never holds
     }
 
     // Function to check and correct a word based on the dictionary
@@ -88,8 +95,8 @@ class SpellChecker
         foreach (var dictWord in dictionary)
         {
             var edits = LevenshteinDistanceWithEdits(word, dictWord);
-            int distance = edits.Count;
-            if (distance <= 2 && IsValidCorrection(edits))
+            int actualEditCount = edits.Count(e => e != "noedit"); // Count only actual edits
+            if (actualEditCount <= 2 && IsValidCorrection(edits))
             {
                 corrections.Add(dictWord); // Add valid corrections within 2 edits
             }
@@ -100,7 +107,12 @@ class SpellChecker
             return $"{{{word}?}}"; // No valid corrections found
         }
 
-        var oneEditCorrections = corrections.Where(c => LevenshteinDistanceWithEdits(word, c).Count == 1).ToList();
+        var oneEditCorrections = corrections.Where(c =>
+        {
+            var edits = LevenshteinDistanceWithEdits(word, c);
+            int actualEditCount = edits.Count(e => e != "noedit");
+            return actualEditCount == 1;
+        }).ToList();
         if (oneEditCorrections.Count == 1)
         {
             return oneEditCorrections[0]; // Return the single valid one-edit correction

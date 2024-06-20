@@ -1,4 +1,4 @@
-A simple program to check spelling. Takes lines as dictionary and text to compare them and edit words.
+A simple program for check spelling. Correcting words by finding them in the dictionary.
 
 Available edits:
 
